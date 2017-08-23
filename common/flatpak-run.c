@@ -4017,8 +4017,6 @@ setup_seccomp (GPtrArray  *argv_array,
     {SCMP_SYS (syslog)},
     /* Useless old syscall */
     {SCMP_SYS (uselib)},
-    /* Don't allow you to switch to bsd emulation or whatnot */
-    {SCMP_SYS (personality)},
     /* Don't allow disabling accounting */
     {SCMP_SYS (acct)},
     /* 16-bit code is unnecessary in the sandbox, and modify_ldt is a
