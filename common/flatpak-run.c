@@ -252,6 +252,30 @@ flatpak_run_add_wayland_args (FlatpakBwrap *bwrap)
   return res;
 }
 
+static gboolean
+flatpak_run_add_ssh_args(FlatpakBwrap *bwrap)
+{
+  const char * auth_socket;
+  g_autofree char * sandbox_auth_socket = NULL;
+
+  auth_socket = g_getenv ("SSH_AUTH_SOCK");
+
+  if (!auth_socket)
+    return FALSE;
+
+  if (!g_file_test (auth_socket, G_FILE_TEST_EXISTS))
+    return FALSE;
+
+  sandbox_auth_socket = g_strdup_printf ("/run/user/%d/ssh-auth", getuid());
+
+  flatpak_bwrap_add_args (bwrap,
+                          "--bind", auth_socket, sandbox_auth_socket,
+                          NULL);
+  flatpak_bwrap_set_env (bwrap, "SSH_AUTH_SOCK", sandbox_auth_socket, TRUE);
+
+  return TRUE;
+}
+
 /* Try to find a default server from a pulseaudio confguration file */
 static char *
 flatpak_run_get_pulseaudio_server_user_config (const char *path)
@@ -1050,6 +1074,10 @@ flatpak_run_add_environment_args (FlatpakBwrap   *bwrap,
     allow_x11 = (context->sockets & FLATPAK_CONTEXT_SOCKET_X11) != 0;
 
   flatpak_run_add_x11_args (bwrap, allow_x11);
+
+  if (context->sockets & FLATPAK_CONTEXT_SOCKET_SSH_AUTH) {
+    flatpak_run_add_ssh_args (bwrap);
+  }
 
   if (context->sockets & FLATPAK_CONTEXT_SOCKET_PULSEAUDIO)
     {
